@@ -3,1242 +3,715 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PIXEL ARCADE</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+<title>LUMIÈRE — Wear the Light</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --panel: #0f0f1a;
-    --border: #1a1a2e;
-    --green: #00ff41;
-    --cyan: #00e5ff;
-    --yellow: #ffe600;
-    --red: #ff2d55;
-    --purple: #bf5fff;
-    --white: #e8e8f0;
-    --dim: #3a3a5c;
-    --scanline: rgba(0,255,65,0.03);
+    --cream:   #F9F6F0;
+    --sand:    #EDE8DF;
+    --stone:   #C8BFB0;
+    --charcoal:#2C2C2C;
+    --ink:     #1A1A1A;
+    --gold:    #B8975A;
+    --gold-lt: #D4B47A;
+    --white:   #FFFFFF;
+    --muted:   #8A8278;
   }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { scroll-behavior: smooth; }
+
   body {
-    background: var(--bg);
-    color: var(--white);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    min-height: 100vh;
+    font-family: 'Jost', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-weight: 300;
     overflow-x: hidden;
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect x='6' y='0' width='4' height='16' fill='%2300ff41'/%3E%3Crect x='0' y='6' width='16' height='4' fill='%2300ff41'/%3E%3C/svg%3E") 8 8, crosshair;
   }
 
-  /* CRT scanline overlay */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
+  /* ── CURSOR ── */
+  body { cursor: none; }
+  #cursor {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--gold);
+    position: fixed; top: 0; left: 0;
     pointer-events: none;
-    z-index: 1000;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.15s ease, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: multiply;
   }
+  #cursor.hover { width: 40px; height: 40px; background: var(--gold-lt); opacity: 0.6; }
 
-  /* Pixel border utility */
-  .pixel-box {
-    border: 3px solid var(--green);
-    box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--green), 4px 4px 0 6px var(--bg);
-    image-rendering: pixelated;
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 60px;
+    transition: background 0.4s, padding 0.3s;
   }
-  .pixel-box-cyan { border-color: var(--cyan); box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--cyan), 4px 4px 0 6px var(--bg); }
-  .pixel-box-yellow { border-color: var(--yellow); box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--yellow), 4px 4px 0 6px var(--bg); }
+  nav.scrolled { background: rgba(249,246,240,0.95); backdrop-filter: blur(12px); padding: 16px 60px; border-bottom: 1px solid var(--sand); }
 
-  /* ── HEADER ── */
-  header {
-    padding: 24px 32px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid var(--dim);
-    position: relative;
-    overflow: hidden;
-  }
-  header::after {
-    content: '';
-    position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--green), transparent);
-    animation: scanH 3s linear infinite;
-  }
-  @keyframes scanH { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-
-  .logo {
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
     font-size: 22px;
-    color: var(--green);
-    text-shadow: 0 0 10px var(--green), 0 0 30px var(--green);
-    letter-spacing: 4px;
-    animation: flicker 4s infinite;
-  }
-  @keyframes flicker {
-    0%,96%,100% { opacity: 1; }
-    97% { opacity: 0.4; }
-    98% { opacity: 1; }
-    99% { opacity: 0.6; }
-  }
-
-  .coin-counter {
-    display: flex; align-items: center; gap: 8px;
-    color: var(--yellow);
-    font-size: 9px;
-  }
-  .coin { width: 16px; height: 16px; background: var(--yellow); border-radius: 0; display: inline-block; animation: spin 2s steps(4) infinite; }
-  @keyframes spin { from { transform: scaleX(1); } 25% { transform: scaleX(0.3); } 50% { transform: scaleX(1); } 75% { transform: scaleX(0.3); } to { transform: scaleX(1); } }
-
-  nav { display: flex; gap: 20px; }
-  nav a {
-    color: var(--dim);
+    letter-spacing: 6px;
+    font-weight: 400;
+    color: var(--ink);
     text-decoration: none;
-    font-size: 8px;
-    transition: color 0.1s;
-    padding: 4px 0;
-    cursor: pointer;
   }
-  nav a:hover, nav a.active { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
 
-  /* ── PAGES ── */
-  .page { display: none; }
-  .page.active { display: block; }
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    text-decoration: none; color: var(--charcoal); font-weight: 400;
+    position: relative; padding-bottom: 3px;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 0; height: 1px; background: var(--gold);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover::after { width: 100%; }
 
-  /* ── HERO TICKER ── */
-  .ticker-wrap {
-    background: var(--green);
-    padding: 6px 0;
+  .nav-cta {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 10px 24px; border: 1px solid var(--ink);
+    background: transparent; color: var(--ink);
+    cursor: none; font-family: 'Jost', sans-serif; font-weight: 400;
+    transition: background 0.3s, color 0.3s;
+  }
+  .nav-cta:hover { background: var(--ink); color: var(--cream); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
     overflow: hidden;
-    white-space: nowrap;
-  }
-  .ticker-inner {
-    display: inline-block;
-    animation: ticker 20s linear infinite;
-    color: var(--bg);
-    font-size: 8px;
-    letter-spacing: 2px;
-  }
-  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-  /* ── MAIN LAYOUT ── */
-  .main {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 24px;
-    padding: 32px;
-    max-width: 1100px;
-    margin: 0 auto;
   }
 
-  /* ── GAME SECTION ── */
-  .game-section { display: flex; flex-direction: column; gap: 16px; }
-
-  .game-title {
-    font-size: 14px;
-    color: var(--cyan);
-    text-shadow: 0 0 12px var(--cyan);
-    display: flex; align-items: center; gap: 12px;
-  }
-  .game-title::before { content: '▶'; color: var(--green); font-size: 10px; }
-
-  .game-meta {
-    display: flex; gap: 20px;
-    font-size: 8px;
-    color: var(--dim);
-  }
-  .game-meta span { color: var(--yellow); }
-
-  .canvas-wrap {
-    position: relative;
-    display: inline-block;
-    padding: 16px;
-    background: var(--panel);
+  .hero-left {
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 120px 60px 100px;
+    position: relative; z-index: 2;
   }
 
-  #gameCanvas {
-    display: block;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+  .hero-eyebrow {
+    font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold); font-weight: 400; margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 1s 0.3s forwards;
   }
 
-  .game-overlay {
-    position: absolute;
-    inset: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(10,10,15,0.92);
-    z-index: 10;
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 6vw, 88px);
+    font-weight: 300; line-height: 1.05;
+    letter-spacing: -1px; color: var(--ink);
+    opacity: 0; animation: fadeUp 1s 0.5s forwards;
   }
-  .overlay-title {
-    font-size: 20px;
-    color: var(--green);
-    text-shadow: 0 0 20px var(--green);
-    margin-bottom: 20px;
-    animation: blink 1s steps(1) infinite;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-  .overlay-score { font-size: 10px; color: var(--white); margin-bottom: 8px; }
-  .overlay-sub { font-size: 8px; color: var(--dim); margin-bottom: 28px; }
+  .hero-title em { font-style: italic; color: var(--gold); }
 
-  .btn-pixel {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    padding: 12px 24px;
-    background: var(--green);
-    color: var(--bg);
-    border: none;
-    cursor: pointer;
-    image-rendering: pixelated;
-    position: relative;
-    transition: transform 0.05s;
-    box-shadow: 4px 4px 0 rgba(0,255,65,0.3);
+  .hero-sub {
+    margin-top: 28px; max-width: 380px;
+    font-size: 15px; line-height: 1.8; color: var(--muted); font-weight: 300;
+    opacity: 0; animation: fadeUp 1s 0.7s forwards;
   }
-  .btn-pixel:hover { background: var(--cyan); transform: translate(-2px,-2px); box-shadow: 6px 6px 0 rgba(0,229,255,0.3); }
-  .btn-pixel:active { transform: translate(2px,2px); box-shadow: none; }
-  .btn-pixel.red { background: var(--red); box-shadow: 4px 4px 0 rgba(255,45,85,0.3); }
-  .btn-pixel.red:hover { background: #ff6b84; }
 
-  .controls-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 16px;
-    background: var(--panel);
-    border-top: 2px solid var(--dim);
+  .hero-actions {
+    margin-top: 48px; display: flex; gap: 20px; align-items: center;
+    opacity: 0; animation: fadeUp 1s 0.9s forwards;
   }
-  .score-display { display: flex; gap: 24px; }
-  .score-item { display: flex; flex-direction: column; gap: 4px; }
-  .score-label { font-size: 7px; color: var(--dim); }
-  .score-val { font-size: 12px; color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
 
-  .arrow-keys {
-    display: grid;
-    grid-template-columns: repeat(3, 28px);
-    grid-template-rows: repeat(2, 28px);
-    gap: 3px;
-    opacity: 0.5;
+  .btn-primary {
+    font-family: 'Jost', sans-serif; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; font-weight: 400;
+    padding: 16px 40px; background: var(--ink); color: var(--cream);
+    border: none; cursor: none; text-decoration: none; display: inline-block;
+    transition: background 0.3s, letter-spacing 0.3s;
   }
-  .key {
-    width: 28px; height: 28px;
-    background: var(--dim);
+  .btn-primary:hover { background: var(--gold); letter-spacing: 4px; }
+
+  .btn-ghost {
+    font-family: 'Jost', sans-serif; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; font-weight: 400;
+    padding: 16px 32px; background: transparent; color: var(--ink);
+    border: 1px solid var(--stone); cursor: none; text-decoration: none;
+    display: inline-block; transition: border-color 0.3s, color 0.3s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  .hero-right {
+    position: relative; overflow: hidden;
+    background: var(--sand);
+  }
+
+  /* Geometric fashion illustration placeholder */
+  .hero-visual {
+    width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px;
-    transition: background 0.1s, transform 0.05s;
+    position: relative;
   }
-  .key.active { background: var(--green); color: var(--bg); transform: scale(0.9); }
-  .key-up { grid-column: 2; grid-row: 1; }
-  .key-left { grid-column: 1; grid-row: 2; }
-  .key-down { grid-column: 2; grid-row: 2; }
-  .key-right { grid-column: 3; grid-row: 2; }
+  .hero-visual svg { width: 70%; max-width: 420px; opacity: 0; animation: fadeIn 1.2s 0.4s forwards; }
 
-  /* ── SIDEBAR ── */
-  .sidebar { display: flex; flex-direction: column; gap: 20px; }
-
-  .panel-header {
-    font-size: 9px;
-    color: var(--yellow);
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--dim);
-    display: flex; align-items: center; gap: 8px;
-    text-shadow: 0 0 8px var(--yellow);
-  }
-  .panel-header::before { content: '◈'; }
-
-  /* Leaderboard */
-  .leaderboard { padding: 16px; background: var(--panel); }
-
-  .lb-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 8px;
-    transition: background 0.15s;
-  }
-  .lb-row:hover { background: rgba(0,255,65,0.04); }
-  .lb-row:last-child { border-bottom: none; }
-
-  .lb-rank { width: 20px; text-align: center; color: var(--dim); }
-  .lb-rank.top1 { color: var(--yellow); font-size: 10px; }
-  .lb-rank.top2 { color: #c0c0c0; }
-  .lb-rank.top3 { color: #cd7f32; }
-
-  .lb-avatar {
-    width: 24px; height: 24px;
-    flex-shrink: 0;
-    image-rendering: pixelated;
-  }
-
-  .lb-name { flex: 1; color: var(--white); }
-  .lb-score { color: var(--green); text-shadow: 0 0 6px var(--green); }
-
-  .you-row { border: 1px solid var(--purple); background: rgba(191,95,255,0.08) !important; }
-  .you-row .lb-name { color: var(--purple); }
-  .you-row .lb-score { color: var(--purple); text-shadow: 0 0 6px var(--purple); }
-
-  /* Name input */
-  .name-form {
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 12px; background: var(--panel);
-  }
-  .name-label { font-size: 7px; color: var(--dim); }
-  .name-input {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    background: var(--bg);
-    border: 2px solid var(--dim);
-    color: var(--green);
-    padding: 8px;
-    outline: none;
-    width: 100%;
-    text-transform: uppercase;
-  }
-  .name-input:focus { border-color: var(--green); box-shadow: 0 0 8px var(--green); }
-
-  /* Stats */
-  .stats-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 8px; padding: 16px;
-    background: var(--panel);
-  }
-  .stat-box {
-    padding: 10px;
-    background: var(--bg);
-    border: 1px solid var(--dim);
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .stat-label { font-size: 6px; color: var(--dim); }
-  .stat-val { font-size: 11px; color: var(--cyan); }
-
-  /* Progress bar */
-  .progress-wrap { padding: 16px; background: var(--panel); }
-  .prog-label { font-size: 7px; color: var(--dim); margin-bottom: 6px; display: flex; justify-content: space-between; }
-  .prog-track { height: 12px; background: var(--bg); border: 1px solid var(--dim); }
-  .prog-fill {
-    height: 100%;
-    background: repeating-linear-gradient(90deg, var(--green) 0, var(--green) 8px, transparent 8px, transparent 10px);
-    transition: width 0.5s steps(10);
-  }
-
-  /* ── GAME SELECT TABS ── */
-  .tabs { display: flex; gap: 0; margin-bottom: 0; }
-  .tab {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    padding: 8px 14px;
-    background: var(--border);
-    color: var(--dim);
-    border: none;
-    cursor: pointer;
-    transition: background 0.1s, color 0.1s;
-    border-top: 2px solid transparent;
-  }
-  .tab:hover { color: var(--white); }
-  .tab.active { background: var(--panel); color: var(--cyan); border-top-color: var(--cyan); }
-
-  /* Mobile touch controls */
-  .touch-controls {
-    display: none;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    padding: 12px;
-    background: var(--panel);
-  }
-  .touch-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    padding: 14px;
-    background: var(--dim);
-    color: var(--white);
-    border: none;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .touch-btn:active { background: var(--green); color: var(--bg); }
-  .touch-center { grid-column: 2; }
-
-  @media (max-width: 700px) {
-    .main { grid-template-columns: 1fr; padding: 12px; }
-    .touch-controls { display: grid; }
-    .arrow-keys { display: none; }
-    .logo { font-size: 14px; }
-  }
-
-  /* ── SCORES PAGE ── */
-  .scores-page {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-  }
-  .page-title {
-    font-size: 18px;
-    color: var(--yellow);
-    text-shadow: 0 0 16px var(--yellow);
+  .hero-scroll {
+    position: absolute; bottom: 40px; left: 60px;
     display: flex; align-items: center; gap: 12px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--dim);
+    font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--stone);
+    opacity: 0; animation: fadeUp 1s 1.2s forwards;
   }
-  .page-title::before { content: '◈'; color: var(--green); }
+  .hero-scroll::before {
+    content: ''; display: block;
+    width: 40px; height: 1px; background: var(--stone);
+    animation: expandLine 1.5s 1.5s forwards;
+    transform-origin: left;
+  }
 
-  .scores-grid {
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes expandLine { from { width: 0; } to { width: 40px; } }
+
+  /* ── SECTION SHARED ── */
+  section { padding: 120px 60px; }
+  .section-label {
+    font-size: 9px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 16px; display: block;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 300; line-height: 1.2; color: var(--ink);
+  }
+  .section-title em { font-style: italic; }
+
+  /* ── FEATURES / BENEFITS ── */
+  .features { background: var(--white); }
+  .features-inner { max-width: 1200px; margin: 0 auto; }
+  .features-header { text-align: center; margin-bottom: 80px; }
+  .features-header p { margin-top: 20px; color: var(--muted); max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.8; font-size: 15px; }
+
+  .features-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  @media (max-width: 600px) { .scores-grid { grid-template-columns: 1fr; } }
-
-  .score-card {
-    padding: 20px;
-    background: var(--panel);
-    display: flex; flex-direction: column; gap: 12px;
-  }
-  .score-card-title { font-size: 9px; color: var(--cyan); border-bottom: 1px solid var(--dim); padding-bottom: 8px; }
-
-  .big-lb { padding: 0; background: var(--panel); }
-  .big-lb .lb-row { padding: 10px 16px; }
-  .big-lb .lb-row:first-child { background: rgba(255,230,0,0.05); }
-
-  .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filter-tab {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    padding: 6px 10px;
-    background: var(--border);
-    color: var(--dim);
-    border: 1px solid var(--dim);
-    cursor: pointer;
-    transition: all 0.1s;
-  }
-  .filter-tab:hover, .filter-tab.active { background: var(--green); color: var(--bg); border-color: var(--green); }
-
-  .chart-bar-wrap { display: flex; flex-direction: column; gap: 6px; }
-  .chart-row { display: flex; align-items: center; gap: 8px; font-size: 7px; }
-  .chart-label { width: 28px; color: var(--dim); text-align: right; }
-  .chart-track { flex: 1; height: 14px; background: var(--bg); border: 1px solid var(--border); }
-  .chart-fill { height: 100%; background: repeating-linear-gradient(90deg, var(--green) 0, var(--green) 6px, transparent 6px, transparent 8px); transition: width 1s steps(20); }
-  .chart-val { width: 36px; color: var(--yellow); }
-
-  .medal-row { display: flex; gap: 12px; }
-  .medal {
-    flex: 1; padding: 12px 8px;
-    background: var(--bg);
-    border: 1px solid var(--dim);
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    text-align: center;
-  }
-  .medal-icon { font-size: 18px; }
-  .medal-name { font-size: 8px; color: var(--white); }
-  .medal-score { font-size: 9px; color: var(--yellow); }
-  .medal-sub { font-size: 6px; color: var(--dim); }
-
-  /* ── ABOUT PAGE ── */
-  .about-page {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
   }
 
-  .about-hero {
-    padding: 32px;
-    background: var(--panel);
-    display: flex; gap: 24px; align-items: center;
-    flex-wrap: wrap;
+  .feature-card {
+    padding: 56px 40px;
+    background: var(--cream);
+    position: relative; overflow: hidden;
+    transition: background 0.4s;
   }
-  .pixel-logo-big {
-    font-size: 36px;
-    color: var(--green);
-    text-shadow: 0 0 20px var(--green), 0 0 60px var(--green);
-    animation: flicker 4s infinite;
+  .feature-card::before {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 0; height: 2px; background: var(--gold);
+    transition: width 0.5s ease;
+  }
+  .feature-card:hover { background: var(--sand); }
+  .feature-card:hover::before { width: 100%; }
+
+  .feature-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 72px; font-weight: 300; color: var(--sand);
+    line-height: 1; margin-bottom: 24px;
+    transition: color 0.4s;
+  }
+  .feature-card:hover .feature-number { color: var(--stone); }
+
+  .feature-icon { font-size: 28px; margin-bottom: 20px; display: block; }
+  .feature-title { font-size: 14px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; margin-bottom: 16px; color: var(--ink); }
+  .feature-text { font-size: 14px; line-height: 1.8; color: var(--muted); font-weight: 300; }
+
+  /* ── MARQUEE STRIP ── */
+  .marquee-strip {
+    background: var(--ink); padding: 18px 0; overflow: hidden;
     white-space: nowrap;
   }
-  .about-intro { flex: 1; min-width: 200px; }
-  .about-intro p { font-family: 'VT323', monospace; font-size: 20px; color: var(--white); line-height: 1.7; margin-bottom: 10px; }
-  .about-intro .tag { display: inline-block; background: var(--green); color: var(--bg); padding: 2px 8px; font-size: 10px; margin: 2px; }
-
-  .about-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  @media (max-width: 600px) { .about-grid { grid-template-columns: 1fr; } }
-
-  .about-card {
-    padding: 16px;
-    background: var(--panel);
-    border-top: 3px solid var(--cyan);
-    display: flex; flex-direction: column; gap: 8px;
+  .marquee-inner {
+    display: inline-block;
+    animation: marquee 22s linear infinite;
+    font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--cream); font-weight: 300;
   }
-  .about-card-icon { font-size: 24px; }
-  .about-card-title { font-size: 8px; color: var(--cyan); }
-  .about-card-body { font-family: 'VT323', monospace; font-size: 16px; color: var(--dim); line-height: 1.5; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-  .controls-guide {
-    padding: 20px;
-    background: var(--panel);
+  /* ── PRICING ── */
+  .pricing { background: var(--cream); }
+  .pricing-inner { max-width: 1100px; margin: 0 auto; }
+  .pricing-header { margin-bottom: 64px; }
+
+  .pricing-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: start;
   }
-  @media (max-width: 500px) { .controls-guide { grid-template-columns: 1fr; } }
-  .ctrl-item { display: flex; gap: 10px; align-items: flex-start; }
-  .ctrl-key {
-    font-size: 8px;
-    background: var(--dim);
-    color: var(--white);
-    padding: 4px 8px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    border-bottom: 3px solid #1a1a2e;
-  }
-  .ctrl-desc { font-family: 'VT323', monospace; font-size: 16px; color: var(--dim); }
 
-  .changelog { padding: 20px; background: var(--panel); }
-  .cl-entry { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 8px; }
-  .cl-entry:last-child { border-bottom: none; }
-  .cl-ver { color: var(--yellow); width: 48px; flex-shrink: 0; }
-  .cl-desc { font-family: 'VT323', monospace; font-size: 16px; color: var(--dim); }
-  .cl-new { color: var(--green); font-size: 7px; margin-left: 6px; }
-
-  .social-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .social-btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
-    padding: 10px 14px;
-    background: var(--border);
-    color: var(--white);
-    border: 1px solid var(--dim);
-    cursor: pointer;
-    transition: all 0.1s;
+  .pricing-card {
+    padding: 48px 36px;
+    background: var(--white);
+    border: 1px solid var(--sand);
+    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s;
   }
-  .social-btn:hover { background: var(--purple); border-color: var(--purple); color: var(--white); transform: translate(-1px,-1px); }
+  .pricing-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px rgba(0,0,0,0.07); }
+
+  .pricing-card.featured {
+    background: var(--ink); border-color: var(--ink);
+    padding-top: 64px;
+  }
+  .pricing-badge {
+    position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: var(--white);
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 6px 20px; font-weight: 500;
+  }
+
+  .pricing-tier { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .pricing-card.featured .pricing-tier { color: var(--stone); }
+
+  .pricing-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px; font-weight: 300; line-height: 1; color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .pricing-card.featured .pricing-price { color: var(--white); }
+  .pricing-price sup { font-size: 22px; vertical-align: super; }
+  .pricing-period { font-size: 12px; color: var(--muted); margin-bottom: 36px; letter-spacing: 1px; }
+  .pricing-card.featured .pricing-period { color: var(--stone); }
+
+  .pricing-features { list-style: none; margin-bottom: 40px; }
+  .pricing-features li {
+    font-size: 13px; color: var(--charcoal); padding: 10px 0;
+    border-bottom: 1px solid var(--sand); display: flex; align-items: center; gap: 10px;
+    font-weight: 300;
+  }
+  .pricing-card.featured .pricing-features li { color: var(--stone); border-bottom-color: rgba(255,255,255,0.08); }
+  .pricing-features li::before { content: '—'; color: var(--gold); font-size: 10px; }
+
+  .pricing-btn {
+    display: block; width: 100%; padding: 14px;
+    font-family: 'Jost', sans-serif; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; font-weight: 400;
+    border: 1px solid var(--ink); background: transparent; color: var(--ink);
+    cursor: none; text-align: center; text-decoration: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .pricing-btn:hover { background: var(--ink); color: var(--cream); }
+  .pricing-card.featured .pricing-btn { border-color: var(--gold); background: var(--gold); color: var(--white); }
+  .pricing-card.featured .pricing-btn:hover { background: var(--gold-lt); }
+
+  /* ── TESTIMONIALS ── */
+  .testimonials { background: var(--sand); padding: 100px 60px; }
+  .test-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+  .test-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(22px, 3vw, 36px); font-style: italic;
+    font-weight: 300; line-height: 1.6; color: var(--ink);
+    margin: 40px 0 28px;
+  }
+  .test-quote::before { content: '\201C'; color: var(--gold); }
+  .test-quote::after  { content: '\201D'; color: var(--gold); }
+  .test-author { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  .test-dots { display: flex; justify-content: center; gap: 8px; margin-top: 40px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--stone); cursor: none; transition: background 0.3s, transform 0.3s; }
+  .dot.active { background: var(--gold); transform: scale(1.4); }
+
+  /* ── CONTACT / CTA ── */
+  .contact { background: var(--ink); padding: 120px 60px; }
+  .contact-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .contact-left .section-label { color: var(--gold-lt); }
+  .contact-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 52px); font-weight: 300;
+    line-height: 1.2; color: var(--cream);
+  }
+  .contact-title em { font-style: italic; color: var(--gold); }
+  .contact-sub { margin-top: 20px; font-size: 14px; line-height: 1.8; color: var(--stone); font-weight: 300; }
+
+  .contact-form { display: flex; flex-direction: column; gap: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--stone); }
+  .form-input, .form-select, .form-textarea {
+    font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 300;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+    color: var(--cream); padding: 14px 16px; outline: none;
+    transition: border-color 0.3s; cursor: none;
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: rgba(200,191,176,0.4); }
+  .form-input:focus, .form-textarea:focus { border-color: var(--gold); }
+  .form-textarea { resize: none; height: 100px; }
+  .form-select { appearance: none; -webkit-appearance: none; }
+  .form-select option { background: var(--ink); }
+
+  .form-submit {
+    font-family: 'Jost', sans-serif; font-size: 10px; font-weight: 400;
+    letter-spacing: 3px; text-transform: uppercase;
+    padding: 16px 40px; background: var(--gold); color: var(--white);
+    border: none; cursor: none; align-self: flex-start;
+    transition: background 0.3s, letter-spacing 0.3s;
+  }
+  .form-submit:hover { background: var(--gold-lt); letter-spacing: 4px; }
+
+  .form-success {
+    display: none; padding: 16px 24px;
+    background: rgba(184,151,90,0.15); border: 1px solid var(--gold);
+    color: var(--gold-lt); font-size: 12px; letter-spacing: 1px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink); border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 60px; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif; font-size: 20px; letter-spacing: 6px;
+    color: var(--cream); font-weight: 300;
+  }
+  .footer-links { display: flex; gap: 32px; }
+  .footer-links a { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); text-decoration: none; transition: color 0.3s; }
+  .footer-links a:hover { color: var(--gold); }
+  .footer-copy { font-size: 11px; color: rgba(138,130,120,0.5); letter-spacing: 1px; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 900px) {
+    nav { padding: 20px 24px; }
+    nav.scrolled { padding: 14px 24px; }
+    .nav-links { display: none; }
+    section { padding: 80px 24px; }
+    .hero { grid-template-columns: 1fr; }
+    .hero-left { padding: 120px 24px 60px; }
+    .hero-right { height: 360px; }
+    .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+    .contact-inner { grid-template-columns: 1fr; gap: 40px; }
+    .form-row { grid-template-columns: 1fr; }
+    footer { padding: 40px 24px; flex-direction: column; align-items: flex-start; }
+    .hero-scroll { left: 24px; }
+  }
 </style>
 </head>
 <body>
 
-<!-- TICKER -->
-<div class="ticker-wrap">
-  <div class="ticker-inner">
-    ★ INSERT COIN TO PLAY ★&nbsp;&nbsp;&nbsp;&nbsp;HIGH SCORE: <span id="tickerHi">00000</span>&nbsp;&nbsp;&nbsp;&nbsp;★ PRESS START ★&nbsp;&nbsp;&nbsp;&nbsp;PIXEL ARCADE — EST. 1984&nbsp;&nbsp;&nbsp;&nbsp;★ INSERT COIN TO PLAY ★&nbsp;&nbsp;&nbsp;&nbsp;HIGH SCORE: <span id="tickerHi2">00000</span>&nbsp;&nbsp;&nbsp;&nbsp;★ PRESS START ★&nbsp;&nbsp;&nbsp;&nbsp;PIXEL ARCADE — EST. 1984&nbsp;&nbsp;&nbsp;&nbsp;
+<!-- Custom cursor -->
+<div id="cursor"></div>
+
+<!-- ── NAV ── -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">LUMIÈRE</a>
+  <ul class="nav-links">
+    <li><a href="#features">Collection</a></li>
+    <li><a href="#pricing">Membership</a></li>
+    <li><a href="#contact">Connect</a></li>
+  </ul>
+  <button class="nav-cta" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Shop Now</button>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero" id="home">
+  <div class="hero-left">
+    <span class="hero-eyebrow">New Collection · SS 2026</span>
+    <h1 class="hero-title">Wear the<br><em>Light.</em><br>Own the<br>Moment.</h1>
+    <p class="hero-sub">LUMIÈRE is a luxury lifestyle brand crafted for those who move through the world with quiet confidence. Ethical fabrics. Timeless silhouettes. Unapologetic elegance.</p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Explore Collection</a>
+      <a href="#features" class="btn-ghost">Our Values</a>
+    </div>
+    <div class="hero-scroll">Scroll to discover</div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-visual">
+      <!-- Elegant geometric fashion SVG illustration -->
+      <svg viewBox="0 0 380 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background shape -->
+        <rect x="60" y="20" width="260" height="480" fill="#EDE8DF" rx="2"/>
+        <!-- Figure silhouette - elegant dress form -->
+        <ellipse cx="190" cy="100" rx="44" ry="44" fill="#C8BFB0"/>
+        <path d="M146 144 C146 144 130 220 128 300 C126 360 140 480 140 480 L240 480 C240 480 254 360 252 300 C250 220 234 144 234 144 Z" fill="#2C2C2C"/>
+        <!-- Dress detail lines -->
+        <path d="M155 200 C170 210 210 210 225 200" stroke="#B8975A" stroke-width="1.5" opacity="0.6"/>
+        <path d="M150 250 C168 262 212 262 230 250" stroke="#B8975A" stroke-width="1.5" opacity="0.6"/>
+        <path d="M145 310 C165 325 215 325 235 310" stroke="#B8975A" stroke-width="1.5" opacity="0.4"/>
+        <!-- Flowing fabric right -->
+        <path d="M234 144 C234 144 270 180 280 260 C288 320 280 420 275 480 L240 480 C240 480 254 360 252 300 C250 220 234 144 234 144 Z" fill="#3A3A3A" opacity="0.6"/>
+        <!-- Collar detail -->
+        <path d="M168 144 L190 172 L212 144" stroke="#B8975A" stroke-width="1.5" fill="none"/>
+        <!-- Gold accent strip -->
+        <rect x="186" y="172" width="8" height="100" fill="#B8975A" opacity="0.3"/>
+        <!-- Belt -->
+        <rect x="140" y="218" width="100" height="10" fill="#B8975A" opacity="0.7"/>
+        <!-- Brand mark -->
+        <text x="190" y="510" font-family="serif" font-size="11" letter-spacing="8" fill="#8A8278" text-anchor="middle">LUMIÈRE</text>
+        <!-- Decorative corner marks -->
+        <path d="M68 28 L68 44" stroke="#B8975A" stroke-width="1"/>
+        <path d="M68 28 L84 28" stroke="#B8975A" stroke-width="1"/>
+        <path d="M312 28 L312 44" stroke="#B8975A" stroke-width="1"/>
+        <path d="M296 28 L312 28" stroke="#B8975A" stroke-width="1"/>
+        <path d="M68 492 L68 476" stroke="#B8975A" stroke-width="1"/>
+        <path d="M68 492 L84 492" stroke="#B8975A" stroke-width="1"/>
+        <path d="M312 492 L312 476" stroke="#B8975A" stroke-width="1"/>
+        <path d="M296 492 L312 492" stroke="#B8975A" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    Sustainably Sourced &nbsp;·&nbsp; Ethically Made &nbsp;·&nbsp; Timeless Design &nbsp;·&nbsp; Luxury Fabrics &nbsp;·&nbsp; Conscious Fashion &nbsp;·&nbsp; Wear the Light &nbsp;·&nbsp; SS 2026 Collection &nbsp;·&nbsp; Free Worldwide Shipping &nbsp;·&nbsp; Sustainably Sourced &nbsp;·&nbsp; Ethically Made &nbsp;·&nbsp; Timeless Design &nbsp;·&nbsp; Luxury Fabrics &nbsp;·&nbsp; Conscious Fashion &nbsp;·&nbsp; Wear the Light &nbsp;·&nbsp; SS 2026 Collection &nbsp;·&nbsp; Free Worldwide Shipping &nbsp;·&nbsp;
   </div>
 </div>
 
-<!-- HEADER -->
-<header>
-  <div class="logo">PIXEL ARCADE</div>
-  <nav>
-    <a onclick="showPage('play')" class="active" id="nav-play">PLAY</a>
-    <a onclick="showPage('scores')" id="nav-scores">SCORES</a>
-    <a onclick="showPage('about')" id="nav-about">ABOUT</a>
-  </nav>
-  <div class="coin-counter">
-    <div class="coin"></div>
-    <span>CREDITS: <span id="creditCount">3</span></span>
+<!-- ── FEATURES ── -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="features-header">
+      <span class="section-label">Why LUMIÈRE</span>
+      <h2 class="section-title">Fashion with a <em>conscience.</em></h2>
+      <p>Every piece in our collection is designed to transcend seasons — crafted with intention, worn with meaning.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-number">01</div>
+        <span class="feature-icon">🌿</span>
+        <div class="feature-title">Sustainable Materials</div>
+        <p class="feature-text">100% certified organic and recycled fabrics. Every thread is traceable from field to finished garment, with zero compromise on quality.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-number">02</div>
+        <span class="feature-icon">✦</span>
+        <div class="feature-title">Artisan Craftsmanship</div>
+        <p class="feature-text">Hand-finished by master artisans in small-batch ateliers across Europe. Each piece carries the mark of genuine human care.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-number">03</div>
+        <span class="feature-icon">∞</span>
+        <div class="feature-title">Timeless by Design</div>
+        <p class="feature-text">No trends. No seasons. Only silhouettes engineered to remain relevant — and remarkable — for decades, not months.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-number">04</div>
+        <span class="feature-icon">◈</span>
+        <div class="feature-title">Perfect Fit Guarantee</div>
+        <p class="feature-text">Made-to-measure options on every style. If it doesn't fit perfectly, we remake it. No questions. No fees.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-number">05</div>
+        <span class="feature-icon">♻</span>
+        <div class="feature-title">Lifetime Repair</div>
+        <p class="feature-text">Send any LUMIÈRE piece back for complimentary repair, re-lining, or re-finishing. We believe in ownership, not obsolescence.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-number">06</div>
+        <span class="feature-icon">🚚</span>
+        <div class="feature-title">Carbon-Zero Delivery</div>
+        <p class="feature-text">Every order is shipped carbon-neutral via certified offset partners, in fully compostable packaging. Delivered beautifully. Responsibly.</p>
+      </div>
+    </div>
   </div>
-</header>
+</section>
 
-<!-- PAGE: PLAY -->
-<div id="page-play" class="page active">
-
-<!-- MAIN -->
-<div class="main">
-
-  <!-- LEFT: GAME -->
-  <div class="game-section">
-
-    <div class="tabs">
-      <button class="tab active">🐍 SNAKE</button>
-      <button class="tab" onclick="alert('More games coming soon!')">🧱 BREAKOUT</button>
-      <button class="tab" onclick="alert('More games coming soon!')">👾 INVADERS</button>
+<!-- ── TESTIMONIALS ── -->
+<section class="testimonials">
+  <div class="test-inner">
+    <span class="section-label">From Our Community</span>
+    <div id="testQuote" class="test-quote">LUMIÈRE changed how I think about getting dressed. These aren't clothes — they're commitments.</div>
+    <div id="testAuthor" class="test-author">— Priya M., Mumbai · Member since 2024</div>
+    <div class="test-dots">
+      <div class="dot active" onclick="setTest(0)"></div>
+      <div class="dot" onclick="setTest(1)"></div>
+      <div class="dot" onclick="setTest(2)"></div>
     </div>
-
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-      <div class="game-title">SNAKE DELUXE</div>
-      <div class="game-meta">
-        GENRE: <span>ARCADE</span> &nbsp;|&nbsp; YEAR: <span>1976</span> &nbsp;|&nbsp; PLAYERS: <span>1P</span>
-      </div>
-    </div>
-
-    <!-- Canvas container -->
-    <div class="canvas-wrap pixel-box" style="align-self: flex-start;">
-      <canvas id="gameCanvas" width="400" height="360"></canvas>
-
-      <!-- Overlays -->
-      <div class="game-overlay" id="startOverlay">
-        <div class="overlay-title">SNAKE</div>
-        <div class="overlay-score">USE ARROW KEYS OR WASD</div>
-        <div class="overlay-sub">EAT FOOD. GROW. SURVIVE.</div>
-        <button class="btn-pixel" onclick="startGame()">▶ INSERT COIN</button>
-      </div>
-
-      <div class="game-overlay" id="gameOverOverlay" style="display:none;">
-        <div class="overlay-title">GAME OVER</div>
-        <div class="overlay-score">SCORE: <span id="finalScore">0</span></div>
-        <div class="overlay-sub" id="newRecordMsg" style="display:none;color:var(--yellow)">★ NEW HIGH SCORE ★</div>
-        <div class="overlay-sub">ENTER YOUR NAME BELOW</div>
-        <button class="btn-pixel" onclick="restartGame()" style="margin-top:8px;">↺ TRY AGAIN</button>
-      </div>
-    </div>
-
-    <!-- Score / controls bar -->
-    <div class="controls-bar pixel-box-cyan">
-      <div class="score-display">
-        <div class="score-item">
-          <div class="score-label">SCORE</div>
-          <div class="score-val" id="scoreDisplay">00000</div>
-        </div>
-        <div class="score-item">
-          <div class="score-label">HIGH</div>
-          <div class="score-val" id="hiDisplay">00000</div>
-        </div>
-        <div class="score-item">
-          <div class="score-label">LEVEL</div>
-          <div class="score-val" id="levelDisplay">01</div>
-        </div>
-        <div class="score-item">
-          <div class="score-label">LIVES</div>
-          <div class="score-val" id="livesDisplay">♥ ♥ ♥</div>
-        </div>
-      </div>
-      <div class="arrow-keys">
-        <div class="key key-up" id="kUp">▲</div>
-        <div class="key key-left" id="kLeft">◀</div>
-        <div class="key key-down" id="kDown">▼</div>
-        <div class="key key-right" id="kRight">▶</div>
-      </div>
-    </div>
-
-    <!-- Mobile touch controls -->
-    <div class="touch-controls pixel-box">
-      <div></div>
-      <button class="touch-btn touch-center" ontouchstart="setDir(0,-1)">▲</button>
-      <div></div>
-      <button class="touch-btn" ontouchstart="setDir(-1,0)">◀</button>
-      <button class="touch-btn touch-center" style="background:var(--dim);opacity:0.3"></button>
-      <button class="touch-btn" ontouchstart="setDir(1,0)">▶</button>
-      <div></div>
-      <button class="touch-btn touch-center" ontouchstart="setDir(0,1)">▼</button>
-      <div></div>
-    </div>
-
   </div>
+</section>
 
-  <!-- RIGHT: SIDEBAR -->
-  <div class="sidebar">
-
-    <!-- Name entry -->
-    <div class="name-form pixel-box-yellow">
-      <div class="panel-header">PLAYER NAME</div>
-      <div class="name-label">ENTER YOUR TAG (3 CHARS)</div>
-      <input class="name-input" id="playerName" maxlength="3" value="AAA" placeholder="AAA">
+<!-- ── PRICING ── -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-header">
+      <span class="section-label">Membership</span>
+      <h2 class="section-title">Choose your <em>level</em> of light.</h2>
     </div>
+    <div class="pricing-grid">
 
-    <!-- Leaderboard -->
-    <div class="leaderboard pixel-box">
-      <div class="panel-header">HALL OF FAME</div>
-      <div id="lbList"></div>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-grid pixel-box-cyan">
-      <div class="stat-box">
-        <div class="stat-label">GAMES PLAYED</div>
-        <div class="stat-val" id="statPlayed">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">BEST STREAK</div>
-        <div class="stat-val" id="statStreak">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">TOTAL FOOD</div>
-        <div class="stat-val" id="statFood">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">AVG SCORE</div>
-        <div class="stat-val" id="statAvg">0</div>
-      </div>
-    </div>
-
-    <!-- XP Bar -->
-    <div class="progress-wrap pixel-box">
-      <div class="panel-header">PLAYER XP</div>
-      <div class="prog-label">
-        <span>LVL <span id="xpLevel">1</span></span>
-        <span id="xpVal">0 / 100 XP</span>
-      </div>
-      <div class="prog-track">
-        <div class="prog-fill" id="xpBar" style="width:0%"></div>
-      </div>
-    </div>
-
-  </div>
-</div><!-- /.main -->
-</div><!-- /#page-play -->
-
-<!-- PAGE: SCORES -->
-<div id="page-scores" class="page">
-  <div class="scores-page">
-    <div class="page-title">HALL OF FAME — ALL TIME SCORES</div>
-
-    <!-- Filter tabs -->
-    <div class="filter-tabs">
-      <button class="filter-tab active" onclick="filterLB('all',this)">ALL TIME</button>
-      <button class="filter-tab" onclick="filterLB('top3',this)">TOP 3</button>
-      <button class="filter-tab" onclick="filterLB('mine',this)">MY SCORES</button>
-    </div>
-
-    <div class="scores-grid">
-
-      <!-- Full leaderboard -->
-      <div class="pixel-box" style="grid-column:1/-1;">
-        <div style="padding:16px 16px 8px; font-size:9px; color:var(--yellow); border-bottom:1px solid var(--dim);">◈ GLOBAL RANKINGS</div>
-        <div id="fullLbList" class="big-lb"></div>
+      <div class="pricing-card">
+        <div class="pricing-tier">Essentials</div>
+        <div class="pricing-price"><sup>$</sup>49</div>
+        <div class="pricing-period">per month</div>
+        <ul class="pricing-features">
+          <li>2 curated pieces per season</li>
+          <li>Access to core collection</li>
+          <li>Standard sizing</li>
+          <li>Free returns within 30 days</li>
+          <li>Digital style guide</li>
+        </ul>
+        <a href="#contact" class="pricing-btn">Get Started</a>
       </div>
 
-      <!-- Top 3 medals -->
-      <div class="score-card pixel-box-cyan">
-        <div class="score-card-title">🏆 PODIUM</div>
-        <div class="medal-row" id="podiumRow"></div>
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most Popular</div>
+        <div class="pricing-tier">Atelier</div>
+        <div class="pricing-price"><sup>$</sup>99</div>
+        <div class="pricing-period">per month</div>
+        <ul class="pricing-features">
+          <li>5 curated pieces per season</li>
+          <li>Full collection access</li>
+          <li>Made-to-measure option</li>
+          <li>Lifetime repair service</li>
+          <li>Personal style consultant</li>
+          <li>Early access to new drops</li>
+        </ul>
+        <a href="#contact" class="pricing-btn">Join Atelier</a>
       </div>
 
-      <!-- Score chart by level -->
-      <div class="score-card pixel-box-yellow">
-        <div class="score-card-title">📊 SCORE DISTRIBUTION</div>
-        <div class="chart-bar-wrap" id="scoreChart"></div>
+      <div class="pricing-card">
+        <div class="pricing-tier">Maison</div>
+        <div class="pricing-price"><sup>$</sup>199</div>
+        <div class="pricing-period">per month</div>
+        <ul class="pricing-features">
+          <li>Unlimited seasonal pieces</li>
+          <li>Bespoke commission access</li>
+          <li>Priority made-to-measure</li>
+          <li>Dedicated wardrobe concierge</li>
+          <li>Exclusive runway previews</li>
+          <li>Annual atelier visit (Paris)</li>
+        </ul>
+        <a href="#contact" class="pricing-btn">Enter Maison</a>
       </div>
 
     </div>
   </div>
-</div>
+</section>
 
-<!-- PAGE: ABOUT -->
-<div id="page-about" class="page">
-  <div class="about-page">
-    <div class="page-title">ABOUT PIXEL ARCADE</div>
-
-    <!-- Hero -->
-    <div class="about-hero pixel-box">
-      <div class="pixel-logo-big">PIXEL<br>ARCADE</div>
-      <div class="about-intro">
-        <p>A love letter to the golden age of arcade gaming.<br>Pure pixel-art chaos, one quarter at a time.</p>
-        <div style="margin-top:8px;">
-          <span class="tag">RETRO</span>
-          <span class="tag">8-BIT</span>
-          <span class="tag">FREE TO PLAY</span>
-          <span class="tag">NO ADS</span>
+<!-- ── CONTACT / CTA ── -->
+<section class="contact" id="contact">
+  <div class="contact-inner">
+    <div class="contact-left">
+      <span class="section-label">Begin Your Journey</span>
+      <h2 class="contact-title">Let's find your <em>signature.</em></h2>
+      <p class="contact-sub">Whether you're discovering LUMIÈRE for the first time or returning to refresh your wardrobe, our style team is here to guide you personally.</p>
+    </div>
+    <div class="contact-right">
+      <form class="contact-form" id="contactForm" onsubmit="handleSubmit(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" type="text" placeholder="Aria" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" type="text" placeholder="Laurent" required>
+          </div>
         </div>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" placeholder="aria@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Membership Interest</label>
+          <select class="form-input form-select">
+            <option value="">Select a plan</option>
+            <option>Essentials — $49/mo</option>
+            <option>Atelier — $99/mo</option>
+            <option>Maison — $199/mo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tell Us About Your Style</label>
+          <textarea class="form-input form-textarea" placeholder="I gravitate towards clean lines and natural tones..."></textarea>
+        </div>
+        <button type="submit" class="form-submit">Send Message</button>
+        <div class="form-success" id="formSuccess">
+          ✦ &nbsp; Thank you. Our style team will be in touch within 24 hours.
+        </div>
+      </form>
     </div>
-
-    <!-- Feature cards -->
-    <div class="about-grid">
-      <div class="about-card">
-        <div class="about-card-icon">🐍</div>
-        <div class="about-card-title">SNAKE DELUXE</div>
-        <div class="about-card-body">Classic snake with 10 speed levels, particle effects, and golden bonus food. How long can you survive?</div>
-      </div>
-      <div class="about-card" style="border-top-color:var(--yellow);">
-        <div class="about-card-icon">🏆</div>
-        <div class="about-card-title">LEADERBOARD</div>
-        <div class="about-card-body">Enter your 3-letter tag and claim your place in the Hall of Fame. Scores saved locally in your browser.</div>
-      </div>
-      <div class="about-card" style="border-top-color:var(--purple);">
-        <div class="about-card-icon">⚡</div>
-        <div class="about-card-title">MORE COMING</div>
-        <div class="about-card-body">Breakout, Space Invaders, Pac-Man-style levels — more pixel classics dropping soon. Stay tuned.</div>
-      </div>
-    </div>
-
-    <!-- Controls guide -->
-    <div class="pixel-box">
-      <div style="padding:14px 20px 10px; font-size:9px; color:var(--cyan);">◈ CONTROLS</div>
-      <div class="controls-guide">
-        <div class="ctrl-item"><span class="ctrl-key">↑ ↓ ← →</span><span class="ctrl-desc">Move the snake in any direction</span></div>
-        <div class="ctrl-item"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">Alternative movement keys</span></div>
-        <div class="ctrl-item"><span class="ctrl-key">P</span><span class="ctrl-desc">Pause / unpause the game</span></div>
-        <div class="ctrl-item"><span class="ctrl-key">TOUCH</span><span class="ctrl-desc">On-screen D-pad on mobile</span></div>
-        <div class="ctrl-item"><span class="ctrl-key">🍎 RED</span><span class="ctrl-desc">Regular food — +10 × level points</span></div>
-        <div class="ctrl-item"><span class="ctrl-key">⭐ GOLD</span><span class="ctrl-desc">Bonus food — +50 × level, time-limited!</span></div>
-      </div>
-    </div>
-
-    <!-- Changelog -->
-    <div class="changelog pixel-box-yellow">
-      <div style="padding:0 0 10px; font-size:9px; color:var(--yellow);">◈ CHANGELOG</div>
-      <div class="cl-entry"><div class="cl-ver">v1.2</div><div class="cl-desc">Added golden bonus food, particle burst effects, XP system<span class="cl-new">● NEW</span></div></div>
-      <div class="cl-entry"><div class="cl-ver">v1.1</div><div class="cl-desc">Leaderboard with local persistence, player avatars, podium medals</div></div>
-      <div class="cl-entry"><div class="cl-ver">v1.0</div><div class="cl-desc">Initial launch — Snake Deluxe with 10 difficulty levels, CRT overlay, mobile support</div></div>
-      <div class="cl-entry"><div class="cl-ver">SOON</div><div class="cl-desc">Breakout, Space Invaders, online leaderboard sync<span class="cl-new">● COMING</span></div></div>
-    </div>
-
-    <!-- Social / Footer -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:16px; background:var(--panel); font-size:7px; color:var(--dim);">
-      <div>PIXEL ARCADE © 1984–2026 &nbsp;·&nbsp; MADE WITH ♥ &amp; PIXELS</div>
-      <div class="social-row">
-        <button class="social-btn">🐦 TWITTER</button>
-        <button class="social-btn">💾 GITHUB</button>
-        <button class="social-btn">🕹️ ITCH.IO</button>
-      </div>
-    </div>
-
   </div>
-</div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">LUMIÈRE</div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Sustainability</a>
+    <a href="#">Careers</a>
+  </div>
+  <div class="footer-copy">© 2026 LUMIÈRE. All rights reserved.</div>
+</footer>
 
 <script>
-// ═══════════════════════════════════════
-//  SNAKE GAME ENGINE
-// ═══════════════════════════════════════
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-
-const COLS = 20, ROWS = 18, CELL = 20;
-let snake, dir, nextDir, food, special, score, highScore, level, lives, gamesPlayed, totalFood, totalScore;
-let gameLoop, running = false, paused = false;
-let particles = [];
-
-// ── Pixel art colors ──
-const COLORS = {
-  bg:       '#0a0a0f',
-  grid:     '#0d0d18',
-  snakeH:   '#00ff41',
-  snakeB:   '#00cc33',
-  snakeDim: '#006616',
-  food:     '#ff2d55',
-  foodGlow: '#ff6b84',
-  special:  '#ffe600',
-  wall:     '#1a1a2e',
-  text:     '#e8e8f0',
-};
-
-function initState() {
-  snake = [
-    {x:10, y:9}, {x:9,  y:9}, {x:8,  y:9}
-  ];
-  dir = {x:1, y:0};
-  nextDir = {x:1, y:0};
-  score = 0;
-  level = 1;
-  lives = 3;
-  particles = [];
-  special = null;
-  placeFood();
-  updateHUD();
-}
-
-function placeFood() {
-  let pos;
-  do {
-    pos = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
-  } while (snake.some(s => s.x===pos.x && s.y===pos.y));
-  food = pos;
-  food.pulse = 0;
-
-  // 15% chance special food
-  if (Math.random() < 0.15) {
-    setTimeout(() => {
-      if (running) {
-        let sp;
-        do { sp = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; }
-        while (snake.some(s=>s.x===sp.x&&s.y===sp.y));
-        special = sp;
-        special.life = 180;
-      }
-    }, 1000);
-  }
-}
-
-function spawnParticles(x, y, color) {
-  for (let i = 0; i < 8; i++) {
-    particles.push({
-      x: x*CELL + CELL/2,
-      y: y*CELL + CELL/2,
-      vx: (Math.random()-0.5)*4,
-      vy: (Math.random()-0.5)*4,
-      life: 30 + Math.random()*20,
-      maxLife: 50,
-      color,
-      size: 2 + Math.random()*2,
-    });
-  }
-}
-
-function updateParticles() {
-  for (let p of particles) {
-    p.x += p.vx; p.y += p.vy;
-    p.vy += 0.1;
-    p.life--;
-  }
-  particles = particles.filter(p => p.life > 0);
-}
-
-function drawParticles() {
-  for (let p of particles) {
-    ctx.globalAlpha = p.life / p.maxLife;
-    ctx.fillStyle = p.color;
-    const s = Math.floor(p.size);
-    ctx.fillRect(Math.floor(p.x - s/2), Math.floor(p.y - s/2), s, s);
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawGrid() {
-  ctx.fillStyle = COLORS.bg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = COLORS.grid;
-  for (let x = 0; x < COLS; x++) for (let y = 0; y < ROWS; y++) {
-    if ((x+y) % 2 === 0) ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
-  }
-}
-
-function drawSnake() {
-  snake.forEach((seg, i) => {
-    const px = seg.x * CELL, py = seg.y * CELL;
-    if (i === 0) {
-      // Head
-      ctx.fillStyle = COLORS.snakeH;
-      ctx.fillRect(px+1, py+1, CELL-2, CELL-2);
-      // Eyes
-      ctx.fillStyle = COLORS.bg;
-      const ex = dir.x, ey = dir.y;
-      if (ex === 1)       { ctx.fillRect(px+12, py+3, 3, 3); ctx.fillRect(px+12, py+12, 3, 3); }
-      else if (ex === -1) { ctx.fillRect(px+3,  py+3, 3, 3); ctx.fillRect(px+3,  py+12, 3, 3); }
-      else if (ey === -1) { ctx.fillRect(px+3,  py+3, 3, 3); ctx.fillRect(px+12, py+3, 3, 3); }
-      else                { ctx.fillRect(px+3,  py+12,3, 3); ctx.fillRect(px+12, py+12,3, 3); }
-    } else {
-      const t = i / snake.length;
-      ctx.fillStyle = t > 0.6 ? COLORS.snakeDim : COLORS.snakeB;
-      const pad = Math.min(3, Math.floor(t*3));
-      ctx.fillRect(px+pad+1, py+pad+1, CELL-2-pad*2, CELL-2-pad*2);
-    }
-  });
-}
-
-function drawFood() {
-  food.pulse = (food.pulse || 0) + 0.12;
-  const px = food.x * CELL, py = food.y * CELL;
-  const scale = 1 + Math.sin(food.pulse) * 0.12;
-  const off = (CELL - CELL*scale) / 2;
-  ctx.fillStyle = COLORS.food;
-  ctx.fillRect(Math.floor(px+off+2), Math.floor(py+off+2), Math.ceil(CELL*scale-4), Math.ceil(CELL*scale-4));
-  // pixel shine
-  ctx.fillStyle = COLORS.foodGlow;
-  ctx.fillRect(Math.floor(px+off+3), Math.floor(py+off+3), 4, 2);
-}
-
-function drawSpecial() {
-  if (!special) return;
-  special.life--;
-  if (special.life <= 0) { special = null; return; }
-  const px = special.x*CELL, py = special.y*CELL;
-  const blink = special.life < 40 ? Math.floor(special.life/4)%2 : 1;
-  if (!blink) return;
-  ctx.fillStyle = COLORS.special;
-  ctx.fillRect(px+2, py+2, CELL-4, CELL-4);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(px+5, py+5, 4, 4);
-  // ★ symbol drawn pixel-style
-  ctx.fillStyle = COLORS.bg;
-  ctx.fillRect(px+8, py+4, 2, 2);
-}
-
-function step() {
-  dir = {...nextDir};
-  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-
-  // Wall collision
-  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) { die(); return; }
-  // Self collision
-  if (snake.some(s => s.x===head.x && s.y===head.y)) { die(); return; }
-
-  snake.unshift(head);
-
-  let ate = false;
-  if (head.x===food.x && head.y===food.y) {
-    score += 10 * level;
-    totalFood++;
-    ate = true;
-    spawnParticles(food.x, food.y, COLORS.food);
-    placeFood();
-    if (score > 0 && score % 100 === 0) level = Math.min(10, level+1);
-  } else if (special && head.x===special.x && head.y===special.y) {
-    score += 50 * level;
-    totalFood++;
-    spawnParticles(special.x, special.y, COLORS.special);
-    special = null;
-    ate = true;
-  }
-
-  if (!ate) snake.pop();
-  if (score > highScore) highScore = score;
-  updateHUD();
-}
-
-function die() {
-  lives--;
-  updateHUD();
-  // Flash effect
-  ctx.fillStyle = 'rgba(255,45,85,0.3)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  if (lives <= 0) {
-    gameEnd();
-  } else {
-    // Respawn after pause
-    clearInterval(gameLoop);
-    setTimeout(() => {
-      snake = [{x:10,y:9},{x:9,y:9},{x:8,y:9}];
-      dir = nextDir = {x:1,y:0};
-      gameLoop = setInterval(gameTick, getSpeed());
-    }, 800);
-  }
-}
-
-function getSpeed() { return Math.max(60, 160 - (level-1)*15); }
-
-function gameEnd() {
-  running = false;
-  clearInterval(gameLoop);
-  gamesPlayed++;
-  totalScore += score;
-  document.getElementById('finalScore').textContent = String(score).padStart(5,'0');
-  document.getElementById('newRecordMsg').style.display = score >= highScore && score > 0 ? 'block' : 'none';
-  document.getElementById('gameOverOverlay').style.display = 'flex';
-  addToLeaderboard();
-  updateStats();
-  updateXP();
-  updateTickerHi();
-}
-
-function gameTick() {
-  step();
-  drawGrid();
-  drawFood();
-  drawSpecial();
-  drawSnake();
-  updateParticles();
-  drawParticles();
-}
-
-function startGame() {
-  document.getElementById('startOverlay').style.display = 'none';
-  document.getElementById('gameOverOverlay').style.display = 'none';
-  initState();
-  running = true;
-  clearInterval(gameLoop);
-  gameLoop = setInterval(gameTick, getSpeed());
-}
-
-function restartGame() {
-  startGame();
-}
-
-function setDir(x, y) {
-  if (!running) return;
-  if (x===1  && dir.x===-1) return;
-  if (x===-1 && dir.x===1)  return;
-  if (y===1  && dir.y===-1) return;
-  if (y===-1 && dir.y===1)  return;
-  nextDir = {x, y};
-}
-
-// ── Keyboard ──
-const keyMap = {'ArrowUp':[0,-1],'ArrowDown':[0,1],'ArrowLeft':[-1,0],'ArrowRight':[1,0],'w':[0,-1],'s':[0,1],'a':[-1,0],'d':[1,0]};
-const keyEl   = {'ArrowUp':'kUp','ArrowDown':'kDown','ArrowLeft':'kLeft','ArrowRight':'kRight','w':'kUp','s':'kDown','a':'kLeft','d':'kRight'};
-
-document.addEventListener('keydown', e => {
-  if (keyMap[e.key]) {
-    e.preventDefault();
-    const [x,y] = keyMap[e.key];
-    setDir(x, y);
-    const el = document.getElementById(keyEl[e.key]);
-    if (el) { el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),100); }
-  }
-  if ((e.key==='p'||e.key==='P') && running) {
-    paused = !paused;
-    if (paused) clearInterval(gameLoop);
-    else gameLoop = setInterval(gameTick, getSpeed());
-  }
+// ── Custom cursor ──
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+});
+document.querySelectorAll('a, button, .dot, .feature-card').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
 });
 
-// ── HUD ──
-function pad(n, len=5) { return String(n).padStart(len,'0'); }
-function updateHUD() {
-  document.getElementById('scoreDisplay').textContent = pad(score);
-  document.getElementById('hiDisplay').textContent    = pad(highScore||0);
-  document.getElementById('levelDisplay').textContent = pad(level,2);
-  document.getElementById('livesDisplay').textContent = '♥ '.repeat(Math.max(0,lives)).trim() || '—';
-}
+// ── Navbar scroll ──
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+});
 
-// ── LEADERBOARD ──
-let leaderboard = JSON.parse(localStorage.getItem('pa_lb') || '[]');
-if (!leaderboard.length) {
-  leaderboard = [
-    {name:'ACE', score:2450}, {name:'ZAP', score:1980},
-    {name:'BIT', score:1540}, {name:'REX', score:1200},
-    {name:'NRG', score: 850}, {name:'GHO', score: 640},
-    {name:'PXL', score: 420},
-  ];
-}
-
-const AVATARS = [
-  // 8 tiny pixel avatars as SVG data URIs
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect x='2' y='0' width='4' height='2' fill='%2300ff41'/><rect x='1' y='2' width='6' height='4' fill='%2300cc33'/><rect x='2' y='4' width='1' height='2' fill='%2300ff41'/><rect x='5' y='4' width='1' height='2' fill='%2300ff41'/><rect x='2' y='1' width='1' height='1' fill='%230a0a0f'/><rect x='5' y='1' width='1' height='1' fill='%230a0a0f'/></svg>`,
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect x='3' y='0' width='2' height='1' fill='%23ffe600'/><rect x='1' y='1' width='6' height='5' fill='%23ffaa00'/><rect x='0' y='3' width='1' height='2' fill='%23ffaa00'/><rect x='7' y='3' width='1' height='2' fill='%23ffaa00'/><rect x='2' y='2' width='1' height='2' fill='%230a0a0f'/><rect x='5' y='2' width='1' height='2' fill='%230a0a0f'/><rect x='3' y='5' width='2' height='1' fill='%230a0a0f'/></svg>`,
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect x='2' y='0' width='4' height='6' fill='%2300e5ff'/><rect x='1' y='1' width='1' height='4' fill='%2300e5ff'/><rect x='6' y='1' width='1' height='4' fill='%2300e5ff'/><rect x='3' y='2' width='1' height='1' fill='%230a0a0f'/><rect x='5' y='2' width='1' height='1' fill='%230a0a0f'/><rect x='3' y='4' width='3' height='1' fill='%230a0a0f'/></svg>`,
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect x='2' y='1' width='4' height='5' fill='%23bf5fff'/><rect x='1' y='2' width='1' height='3' fill='%23bf5fff'/><rect x='6' y='2' width='1' height='3' fill='%23bf5fff'/><rect x='0' y='3' width='1' height='1' fill='%23bf5fff'/><rect x='7' y='3' width='1' height='1' fill='%23bf5fff'/><rect x='2' y='2' width='2' height='1' fill='%230a0a0f'/><rect x='5' y='2' width='1' height='1' fill='%230a0a0f'/></svg>`,
+// ── Testimonials ──
+const tests = [
+  { quote: "LUMIÈRE changed how I think about getting dressed. These aren't clothes — they're commitments.", author: "— Priya M., Mumbai · Member since 2024" },
+  { quote: "I haven't bought from another brand in two years. The craftsmanship is genuinely extraordinary.", author: "— Sophie K., Paris · Atelier Member" },
+  { quote: "The made-to-measure process was flawless. My coat fits like it was grown for me.", author: "— James O., Lagos · Maison Member" },
 ];
-
-function getAvatar(i) {
-  const a = AVATARS[i % AVATARS.length];
-  return `data:image/svg+xml,${a}`;
+let testIdx = 0;
+function setTest(i) {
+  testIdx = i;
+  document.getElementById('testQuote').textContent  = tests[i].quote;
+  document.getElementById('testAuthor').textContent = tests[i].author;
+  document.querySelectorAll('.dot').forEach((d,j) => d.classList.toggle('active', j===i));
 }
+setInterval(() => setTest((testIdx+1) % tests.length), 5000);
 
-function renderLeaderboard() {
-  const sorted = [...leaderboard].sort((a,b) => b.score-a.score).slice(0,8);
-  const playerName = (document.getElementById('playerName').value || 'AAA').toUpperCase();
-  const html = sorted.map((e, i) => {
-    const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
-    const rankSym   = i===0?'👑':i===1?'②':i===2?'③':`${i+1}`;
-    const isYou = e.name === playerName && e.isYou;
-    return `<div class="lb-row ${isYou?'you-row':''}">
-      <div class="lb-rank ${rankClass}">${rankSym}</div>
-      <img class="lb-avatar" src="${getAvatar(i)}" alt="">
-      <div class="lb-name">${e.name}${isYou?' ◀YOU':''}</div>
-      <div class="lb-score">${pad(e.score)}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('lbList').innerHTML = html;
-}
-
-function addToLeaderboard() {
-  const name = (document.getElementById('playerName').value || 'AAA').toUpperCase().slice(0,3);
-  leaderboard.push({name, score, isYou:true});
-  leaderboard.sort((a,b) => b.score-a.score);
-  leaderboard = leaderboard.slice(0,20);
-  try { localStorage.setItem('pa_lb', JSON.stringify(leaderboard)); } catch(e){}
-  renderLeaderboard();
-  updateTickerHi();
-}
-
-// ── STATS ──
-function updateStats() {
-  document.getElementById('statPlayed').textContent = gamesPlayed;
-  document.getElementById('statStreak').textContent = highScore ? Math.floor(highScore/10) : 0;
-  document.getElementById('statFood').textContent   = totalFood;
-  document.getElementById('statAvg').textContent    = gamesPlayed ? Math.floor(totalScore/gamesPlayed) : 0;
-}
-
-// ── XP ──
-function updateXP() {
-  const xp    = totalScore;
-  const lvl   = Math.floor(xp / 100) + 1;
-  const pct   = (xp % 100);
-  document.getElementById('xpLevel').textContent = lvl;
-  document.getElementById('xpVal').textContent   = `${pct} / 100 XP`;
-  document.getElementById('xpBar').style.width   = pct + '%';
-}
-
-function updateTickerHi() {
-  const hi = pad(highScore||0);
-  document.getElementById('tickerHi').textContent  = hi;
-  document.getElementById('tickerHi2').textContent = hi;
-}
-
-// ── PAGE NAVIGATION ──
-function showPage(name) {
-  ['play','scores','about'].forEach(p => {
-    document.getElementById('page-'+p).classList.toggle('active', p===name);
-    document.getElementById('nav-'+p).classList.toggle('active', p===name);
+// ── Scroll reveal ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
   });
-  if (name === 'scores') renderScoresPage();
-  if (running && name !== 'play') {
-    paused = true; clearInterval(gameLoop);
-  }
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feature-card, .pricing-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(32px)';
+  el.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+  observer.observe(el);
+});
+
+// ── Form submit ──
+function handleSubmit(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('.form-submit');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  setTimeout(() => {
+    document.getElementById('formSuccess').style.display = 'block';
+    btn.style.display = 'none';
+    e.target.reset();
+  }, 1000);
 }
-
-// ── SCORES PAGE ──
-function renderScoresPage() {
-  renderFullLB('all');
-  renderPodium();
-  renderChart();
-}
-
-let currentFilter = 'all';
-function filterLB(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderFullLB(filter);
-}
-
-function renderFullLB(filter) {
-  const playerName = (document.getElementById('playerName').value || 'AAA').toUpperCase();
-  let sorted = [...leaderboard].sort((a,b) => b.score-a.score);
-  if (filter === 'top3') sorted = sorted.slice(0,3);
-  if (filter === 'mine') sorted = sorted.filter(e => e.isYou);
-  if (!sorted.length) {
-    document.getElementById('fullLbList').innerHTML = '<div style="padding:20px;text-align:center;font-size:8px;color:var(--dim);">NO SCORES YET — GO PLAY!</div>';
-    return;
-  }
-  const html = sorted.map((e,i) => {
-    const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
-    const rankSym   = i===0?'👑':i===1?'②':i===2?'③':`${i+1}`;
-    const isYou = e.name === playerName && e.isYou;
-    return `<div class="lb-row ${isYou?'you-row':''}" style="padding:10px 16px;">
-      <div class="lb-rank ${rankClass}" style="width:28px;">${rankSym}</div>
-      <img class="lb-avatar" src="${getAvatar(i)}" alt="" style="width:28px;height:28px;">
-      <div class="lb-name" style="flex:1;">${e.name}${isYou?' ◀ YOU':''}</div>
-      <div class="lb-score">${pad(e.score)}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('fullLbList').innerHTML = html;
-}
-
-function renderPodium() {
-  const top3 = [...leaderboard].sort((a,b)=>b.score-a.score).slice(0,3);
-  const medals = ['👑','🥈','🥉'];
-  const colors = ['var(--yellow)','#c0c0c0','#cd7f32'];
-  const labels = ['1ST PLACE','2ND PLACE','3RD PLACE'];
-  const html = top3.map((e,i) => `
-    <div class="medal" style="border-top:3px solid ${colors[i]};">
-      <div class="medal-icon">${medals[i]}</div>
-      <div class="medal-name">${e.name}</div>
-      <div class="medal-score">${pad(e.score)}</div>
-      <div class="medal-sub">${labels[i]}</div>
-    </div>`).join('');
-  document.getElementById('podiumRow').innerHTML = html || '<div style="color:var(--dim);font-size:8px;padding:8px;">PLAY TO FILL THE PODIUM</div>';
-}
-
-function renderChart() {
-  const sorted = [...leaderboard].sort((a,b)=>b.score-a.score);
-  const max = sorted[0] ? sorted[0].score : 1;
-  const buckets = [
-    {label:'S',range:[2000,99999],color:'var(--yellow)'},
-    {label:'A',range:[1000,1999],color:'var(--green)'},
-    {label:'B',range:[500,999],color:'var(--cyan)'},
-    {label:'C',range:[200,499],color:'var(--purple)'},
-    {label:'D',range:[0,199],color:'var(--dim)'},
-  ];
-  const html = buckets.map(b => {
-    const count = sorted.filter(e => e.score >= b.range[0] && e.score <= b.range[1]).length;
-    const pct = Math.min(100, (count / Math.max(1, sorted.length)) * 100);
-    return `<div class="chart-row">
-      <div class="chart-label" style="color:${b.color};">${b.label}</div>
-      <div class="chart-track"><div class="chart-fill" style="width:${pct}%;background:repeating-linear-gradient(90deg,${b.color} 0,${b.color} 6px,transparent 6px,transparent 8px);"></div></div>
-      <div class="chart-val">${count} PLAY${count!==1?'S':''}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('scoreChart').innerHTML = html;
-}
-
-
-highScore = 0; gamesPlayed = 0; totalFood = 0; totalScore = 0;
-initState();
-drawGrid();
-renderLeaderboard();
-document.getElementById('playerName').addEventListener('input', renderLeaderboard);
 </script>
 </body>
 </html>
